@@ -53,4 +53,8 @@ class ofApp : public ofBaseApp{
 		float xStability;
 		float vibratoFrequency;
 		float vibTargetWidth;
+		vector<float> harmonics;
+		vector<float> harmonicsVowel;
+		float vowelMoves;
+		float envelopCenter;
 };

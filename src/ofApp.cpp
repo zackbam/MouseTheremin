@@ -23,7 +23,7 @@ void ofApp::setup(){
 		float temp;
 		printf("loading Parameters from file:\n");
 		while (!feof(config)) {
-			fscanf(config, "%s %f\n", parName, &temp);
+			fscanf(config, "%s %f", parName, &temp);
 			if (strcmp(parName, "semitones") == 0) {
 				RANGE = (int)temp;
 				printf("Range set to %d semitones.\n", RANGE);
@@ -48,10 +48,24 @@ void ofApp::setup(){
 				vibratoFrequency = temp;
 				printf("vibrato Frequency set to %fHz.\n", vibratoFrequency);
 			}
-			
+			else if (strcmp(parName, "harmonics") == 0) {
+				harmonics.push_back(temp/1000.f);
+				printf("Harmoninc %d set to %d\n", harmonics.size(), (int)temp);
+				char tempH = fgetc(config);
+				while (tempH != '\n' && tempH != '\r' && !feof(config)) {
+					fscanf(config, "%f", &temp);
+					harmonics.push_back(temp/1000.f);
+					printf("Harmoninc %d set to %d\n", harmonics.size(), (int)temp);
+					tempH = fgetc(config);
+				}
+			}
+			fscanf(config, "\n");
 		}
 	}
-
+	if (harmonics.empty()) {
+		harmonics = { 0.8f, 0.1f, 0.02f, 0.01f ,0.005f , 0.002f, 0.001f };
+	}
+	harmonicsVowel = harmonics;
 	ofBackground(34, 34, 34);
 
 	// 2 output channels,
@@ -89,9 +103,10 @@ void ofApp::setup(){
 	
 	xOffset = 0;
 	ofSetWindowShape(ofGetScreenWidth(), ofGetScreenHeight()*windowHeight);
-	ofSetWindowPosition(0, ofGetScreenHeight()*windowHeight/2.f);
+	ofSetWindowPosition(0, (ofGetScreenHeight()-ofGetWindowHeight())/2.f);
 	ofHideCursor();
 	firstFreq = 440.f * pow(2, (float)(firstNote-69.5) / 12.f);
+	vowelMoves = 0.f;
 }
 
 
@@ -110,11 +125,17 @@ void ofApp::update(){
 	getVibrato();
 	prMouse[0] = mouseX;
 	prMouse[1] = mouseY;
-	//float tempVibW = (1.f - (float)(mouseY) / (float)ofGetHeight())*1.2f;
-
 	targetFrequency = firstFreq*pow(2, widthPct* RANGE / 12.f);//half semitone under DO_3
 	phaseAdderTarget = targetFrequency / (float)sampleRate * TWO_PI;
 	vibWidth = 0.9*vibWidth + 0.1*autoVibrato*targetFrequency*vibTargetWidth / TWO_PI/2.0;
+	vowelMoves += 0.02;
+	if (vowelMoves >= TWO_PI)
+		vowelMoves = 0;
+	//envelopCenter = abs(cos(vowelMoves)) * targetFrequency*harmonics.size()/2.f+ targetFrequency;
+	for (int i = 0; i < harmonics.size(); i++) {
+		float dist = targetFrequency*pow(i,1.5f);
+		harmonicsVowel[i] = harmonics[i] * (1.f/pow(2.7f,dist/3000.f));
+	}
 }
 void ofApp::getVibrato() {
 	if (abs(mouseX-prMouse[0])> ofGetScreenWidth()*0.003f)
@@ -178,8 +199,11 @@ void ofApp::draw(){
 	}
 	ofNoFill();
 	ofCircle(pointer, ofGetScreenWidth()*0.01);
-	ofDrawBitmapString(ofToString(targetFrequency), 10, 10);
-
+	/*ofDrawBitmapString(ofToString(targetFrequency), 10, 10);
+	ofDrawBitmapString(ofToString(envelopCenter), 10, 50);
+	for (int i = 0; i < harmonicsVowel.size(); i++) {
+		ofDrawBitmapString(ofToString(harmonicsVowel[i]), 100, 10+i*25);
+	}*/
 }
 
 
@@ -206,49 +230,6 @@ void ofApp::keyPressed  (int key){
 	}
 }
 
-//--------------------------------------------------------------
-void ofApp::keyReleased  (int key){
-
-}
-
-//--------------------------------------------------------------
-void ofApp::mouseMoved(int x, int y ){
-	//float width = (float)ofGetWidth();
-	//float widthPct = x / width * RANGE/12.f;
-	//targetFrequency = 127.0958*pow(2,widthPct);//half semitone under DO_3
-	//phaseAdderTarget = (targetFrequency / (float) sampleRate) * TWO_PI;
-}
-
-//--------------------------------------------------------------
-void ofApp::mouseDragged(int x, int y, int button){
-
-}
-
-//--------------------------------------------------------------
-void ofApp::mousePressed(int x, int y, int button){
-
-}
-
-
-//--------------------------------------------------------------
-void ofApp::mouseReleased(int x, int y, int button){
-
-}
-
-//--------------------------------------------------------------
-void ofApp::mouseEntered(int x, int y){
-
-}
-
-//--------------------------------------------------------------
-void ofApp::mouseExited(int x, int y){
-
-}
-
-//--------------------------------------------------------------
-void ofApp::windowResized(int w, int h){
-	xOffset = 0.f;
-}
 
 //--------------------------------------------------------------
 void ofApp::audioOut(float * output, int bufferSize, int nChannels){
@@ -271,10 +252,9 @@ void ofApp::audioOut(float * output, int bufferSize, int nChannels){
 		vibPhase += vibPhaseAdder;
 		phase += phaseAdder;
 		float cosPhase = cos(vibPhase)*vibWidth;
-		float sample = 0;
-		for (int j = 1; j<=8; j+=1) {
-			float amplitude = 1.f/(float)(j*j*j);
-			sample += amplitude*sin(j *(phase + cosPhase));
+		float sample = 0.f;
+		for (int j = 0; j<harmonicsVowel.size(); j++) {
+			sample += harmonicsVowel[j]*sin((j+1) *(phase + cosPhase));
 		}
 		lAudio[i] = output[i*nChannels] = sample * volume * leftScale;
 		rAudio[i] = output[i*nChannels + 1] = sample * volume * rightScale;
@@ -291,4 +271,45 @@ void ofApp::gotMessage(ofMessage msg){
 //--------------------------------------------------------------
 void ofApp::dragEvent(ofDragInfo dragInfo){ 
 
+}
+
+//--------------------------------------------------------------
+void ofApp::keyReleased(int key) {
+
+}
+
+//--------------------------------------------------------------
+void ofApp::mouseMoved(int x, int y) {
+
+}
+
+//--------------------------------------------------------------
+void ofApp::mouseDragged(int x, int y, int button) {
+
+}
+
+//--------------------------------------------------------------
+void ofApp::mousePressed(int x, int y, int button) {
+
+}
+
+
+//--------------------------------------------------------------
+void ofApp::mouseReleased(int x, int y, int button) {
+
+}
+
+//--------------------------------------------------------------
+void ofApp::mouseEntered(int x, int y) {
+
+}
+
+//--------------------------------------------------------------
+void ofApp::mouseExited(int x, int y) {
+
+}
+
+//--------------------------------------------------------------
+void ofApp::windowResized(int w, int h) {
+	xOffset = 0.f;
 }
