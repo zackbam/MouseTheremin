@@ -18,4 +18,6 @@ harmonics 500 300 80 5 2 2 2
 
 the max value of a harmonic is 1000, but to avoid distortion, the total sum of all should not exceed 1000. For a warm sound have low values in the high harmonics, or simply do not set them at all. For a more aggressive, use the high harmonics.
 For example, with the values above, when you play a note at 100Hz the sound will be a weighted sum of the 7 first harmonics:
-0.5*sin(100) + 0.3*sin(200) + 0.08 * sin(300) + 0.005* sin(400) + 0.002 * sin(500) + 0.002 * sin(600) + 0.002 * sin(700)
+0.5 * sin(100) + 0.3 * sin(200) + 0.08 * sin(300) + 0.005 * sin(400) + 0.002 * sin(500) + 0.002 * sin(600) + 0.002 * sin(700)
+
+The hamonics change dynamically, as in a normal theremin. In high pitch sounds, the high pitch harmonics are lowered.
