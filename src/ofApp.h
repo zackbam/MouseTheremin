@@ -46,7 +46,7 @@ class ofApp : public ofBaseApp{
 		float vibWidth;
 		int pitchInput, VolumeInput,vibratoInput;
 		int xOffset;
-		int prMouse[2];
+		int prMouse[2],prMouseX;
 		float autoVibrato;
 		int RANGE;
 		float firstFreq;

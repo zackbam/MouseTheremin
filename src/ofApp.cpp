@@ -119,12 +119,11 @@ void ofApp::update(){
 		targetVolume = 0.98;
 	if (targetVolume < 0.1)
 		targetVolume = 0;
-
-	float widthPct = (float)(mouseX - xOffset) / (float)ofGetWidth();
-	steadyVertical(); //we have to remember each time wich is our offset
 	getVibrato();
-	prMouse[0] = mouseX;
-	prMouse[1] = mouseY;
+
+	float widthPct = (float)(mouseX) / (float)ofGetWidth();
+
+	
 	targetFrequency = firstFreq*pow(2, widthPct* RANGE / 12.f);//half semitone under DO_3
 	phaseAdderTarget = targetFrequency / (float)sampleRate * TWO_PI;
 	vibWidth = 0.9*vibWidth + 0.1*autoVibrato*targetFrequency*vibTargetWidth / TWO_PI/2.0;
@@ -138,19 +137,21 @@ void ofApp::update(){
 	}
 }
 void ofApp::getVibrato() {
-	if (abs(mouseX-prMouse[0])> ofGetScreenWidth()*0.003f)
+	if (abs(mouseX-prMouseX)> ofGetScreenWidth()*0.003f)
 		autoVibrato = 0.f;
 	else if (autoVibrato < 1)
 		autoVibrato += 0.01;
+
+	prMouseX = mouseX;
 }
 void ofApp::steadyVertical() {
 	float angle = atan((float)abs(prMouse[1] - mouseY) / (float)abs(prMouse[0] - mouseX));
 	if (angle > xStability && (prMouse[0]+prMouse[1]) !=0) {
-		xOffset += mouseX - prMouse[0];
+//		xOffset += mouseX - prMouse[0];
+		SetCursorPos(prMouse[0]+ofGetWindowPositionX(), mouseY+ofGetWindowPositionY());
 	}
 	/*else
 		xOffset = 0.f;*/
-	
 }
 //--------------------------------------------------------------
 void ofApp::draw(){
@@ -179,7 +180,7 @@ void ofApp::draw(){
 	pointer.y = mouseY;
 
 
-	pointer.x = mouseX - xOffset;
+	pointer.x = mouseX;
 	
 	//ofCircle(ofPoint(gaze[0]*ofGetScreenWidth()-ofGetWindowPositionX(), gaze[1]*ofGetScreenHeight()-ofGetWindowPositionY()), ofGetScreenHeight()*0.06);
 	
@@ -280,7 +281,9 @@ void ofApp::keyReleased(int key) {
 
 //--------------------------------------------------------------
 void ofApp::mouseMoved(int x, int y) {
-
+	steadyVertical(); //we have to remember each time wich is our offset
+	prMouse[0] = mouseX;
+	prMouse[1] = mouseY;
 }
 
 //--------------------------------------------------------------

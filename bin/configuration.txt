@@ -1,7 +1,7 @@
 firstMidiNote 48
 semitones 25
 windowHeight 0.25
-slopeXStability 70
+slopeXStability 65
 vibratoWidth 0.45
 vibratoFrequency 5.5
 harmonics 500 300 80 5 2 2 2 
